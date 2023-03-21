@@ -44,10 +44,10 @@ class Colors(object):
 ##
 # ping()
 # Returns: {'responses': [(seq, ttl, time), ...],
-#           'losses': [seq, ...],
-#           'summary': {'transmitted': int, 'received': int, 'packet_loss': int, 'time': float}},
-#           'rtt_summary': {'min': float, 'avg': float, 'max': float, 'mdev': float},
-#           }
+#		   'losses': [seq, ...],
+#		   'summary': {'transmitted': int, 'received': int, 'packet_loss': int, 'time': float}},
+#		   'rtt_summary': {'min': float, 'avg': float, 'max': float, 'mdev': float},
+#		   }
 ##
 def ping(host, qos=0, interval=1, count=5, size='', flood=False, debug_prefix=''):
 	"""Function to run the ping command and extract the results; may be Linux specific."""
@@ -96,7 +96,7 @@ def ping(host, qos=0, interval=1, count=5, size='', flood=False, debug_prefix=''
 		# vs print an error here.
 		m = response_truncated_re.search(line)
 		if m != None and truncated_responses == False:
-			print ("Error: Truncated responses for %s. No response times recorded." %(host))
+			print("Error: Truncated responses for %s. No response times recorded." %(host))
 			truncated_responses = True
 			continue
 
@@ -128,9 +128,9 @@ def ping(host, qos=0, interval=1, count=5, size='', flood=False, debug_prefix=''
 	ret = p.wait()
 	if ret >= 2:
 		# Ping failed. Dump the output ping sent to stderr.
-		print ("Ping failed. Ping standard error output follows this message.")
+		print("Ping failed. Ping standard error output follows this message.")
 		for line in p.stderr.readlines():
-			print (line)
+			print(line)
 
 		return None # No results.
 	elif ret == 1:
@@ -141,24 +141,24 @@ def ping(host, qos=0, interval=1, count=5, size='', flood=False, debug_prefix=''
 
 
 def find_lost_sequence_numbers(results):
-    """Function to identify the ICMP sequence numbers of lost packets.
-        Requires that the input is sorted."""
+	"""Function to identify the ICMP sequence numbers of lost packets.
+		Requires that the input is sorted."""
 
-    # If there were no losses exit early.
-    if results['summary']['transmitted'] == results['summary']['received']:
-        return []
+	# If there were no losses exit early.
+	if results['summary']['transmitted'] == results['summary']['received']:
+		return []
 
-    # Build a list of all transmitted sequence numbers.
-    all_seqs = set(range(1, results['summary']['transmitted']+1))
+	# Build a list of all transmitted sequence numbers.
+	all_seqs = set(range(1, results['summary']['transmitted']+1))
 
-    # Build a set of all the sequence numbers which were not lost.
-    returned_seqs = set([response[0] for response in results['responses']])
+	# Build a set of all the sequence numbers which were not lost.
+	returned_seqs = set([response[0] for response in results['responses']])
 
-    lost_seqs = list(all_seqs - returned_seqs)
+	lost_seqs = list(all_seqs - returned_seqs)
 
-    assert(len(lost_seqs) + results['summary']['received'] == results['summary']['transmitted'])
+	assert(len(lost_seqs) + results['summary']['received'] == results['summary']['transmitted'])
 
-    return lost_seqs
+	return lost_seqs
 
 
 def do_ping(results_q, experiment_id, host, qos=0, interval=1, count=5, size='', flood=False):
@@ -170,38 +170,37 @@ def do_ping(results_q, experiment_id, host, qos=0, interval=1, count=5, size='',
 	results['host'] = host
 	results['qos'] = qos
 
-        # This is a good place to calculate statistics since this is in a separate process.
+		# This is a good place to calculate statistics since this is in a separate process.
 
-        # Sort the results by the ICMP sequence # in case some responses came back out of order.
-def get_ttl(response):
-    return response[0]
-    results['responses'] = sorted(results['responses'], key=get_ttl)
+		# Sort the results by the ICMP sequence # in case some responses came back out of order.
+	def get_ttl(response):
+		return response[0]
+		results['responses'] = sorted(results['responses'], key=get_ttl)
 
-    # Get a list of all the sequence numbers of packets which were dropped.
-    results['losses'] = find_lost_sequence_numbers(results)
+		# Get a list of all the sequence numbers of packets which were dropped.
+		results['losses'] = find_lost_sequence_numbers(results)
 
-    # Calculate the min and max response times.
-    min = results['responses'][0][2]
-    max = results['responses'][0][2]
-    for response in results['responses']:
-        if response[2] < min:
-            min = response[2]
-        if response[2] > max:
-            max = response[2]
+		# Calculate the min and max response times.
+		min = results['responses'][0][2]
+		max = results['responses'][0][2]
+		for response in results['responses']:
+			if response[2] < min:
+				min = response[2]
+			if response[2] > max:
+				max = response[2]
 
-    results['min'] = min
-    results['max'] = max
+		results['min'] = min
+		results['max'] = max
 
-    # Put the results onto the results Queue to be collected by the main process.
-results_q.put((experiment_id, results))
+		# Put the results onto the results Queue to be collected by the main process.
+	results_q.put((experiment_id, results))
 
 
 def graph(results, line_graph=False, image_file=None):
 	"""Function to graph the results of a ping experiment."""
 	TITLE_FONT = {'family': 'sans-serif', 'weight': 'bold', 'size': 14}
 	colors = Colors()
-    # Size of the histrogram in ms
-    HIST_BIN_SIZE_IN_MS=2
+	HIST_BIN_SIZE_IN_MS = 2 # Size of the histogram bins in ms.
 
 	# Create the figure.
 	fig = plt.figure(figsize=(10,10), facecolor='w')
@@ -234,14 +233,14 @@ def graph(results, line_graph=False, image_file=None):
 	mdev_graph.set_ylabel('Mean deviation (ms)')
 	mdev_graph.set_xticks([]) # Disables x ticks.
 
-    # Create the latency histogram.
-    hist1_graph = fig.add_subplot(4,1,3)
+	# Create the latency histogram.
+	hist1_graph = fig.add_subplot(4,1,3)
 	hist1_graph.set_title('Latency histogram (%i ms bins)' %(HIST_BIN_SIZE_IN_MS), TITLE_FONT)
 	hist1_graph.set_xlabel('Latency')
 	hist1_graph.set_ylabel('Samples')
 
-        # Create the loss graph.
-        loss_time_graph = fig.add_subplot(4,1,4)
+	# Create the loss graph.
+	loss_time_graph = fig.add_subplot(4,1,4)
 	loss_time_graph.set_title('Loss vs time', TITLE_FONT)
 	loss_time_graph.set_xlabel('Time (s)')
 	loss_time_graph.set_ylabel('Loss event')
@@ -250,9 +249,9 @@ def graph(results, line_graph=False, image_file=None):
 	# For convenience get a ref to the experiment results.
 	experiments = results['experiments']
 
-        ####
+		####
 	# Plot the response time data and keep track of the largest time (X-axis) value.
-        ####
+		####
 	x_max = 0
 	for num,result in enumerate(sorted(experiments)):
 		if len(experiments[result]['responses']) == 0:
@@ -260,7 +259,7 @@ def graph(results, line_graph=False, image_file=None):
 			continue
 
 		points = [(icmp_seq / (1 / results['ping_interval']), time) for (icmp_seq, ttl, time) in experiments[result]['responses']]
-		points = zip(*points)
+		points = list(zip(*points))
 
 		if line_graph:
 			ret = ax.plot(points[0], points[1], c=colors[num], linewidth=0.6)
@@ -273,70 +272,70 @@ def graph(results, line_graph=False, image_file=None):
 	# Set the axis since auto leaves too much padding.
 	ax.axis(xmin=0,ymin=0,xmax=x_max)
 
-        ####
+		####
 	# Plot the packet loss graph.
-        ####
+		####
 	loss = [experiments[key]['summary']['packet_loss'] for key in sorted(experiments)]
 	ret = loss_graph.bar([x for x in range(len(loss))], loss, width=1, color=colors.list(len(loss)))
 
-        ####
+		####
 	# Plot the average latency graph.
-        ####
+		####
 	latency = [experiments[key]['rtt_summary']['avg'] for key in sorted(experiments)]
 	ret = latency_graph.bar([x for x in range(len(latency))], latency, width=1, color=colors.list(len(latency)))
 
-        ####
+		####
 	# Plot the latency mean deviation graph.
-        ####
+		####
 	mdev = [experiments[key]['rtt_summary']['mdev'] for key in sorted(experiments)]
 	ret = mdev_graph.bar([x for x in range(len(mdev))], mdev, width=1, color=colors.list(len(mdev)))
 
-        ####
+		####
 	# Add the legend (beside the loss, average and mean latency graphs).
-        ####
+		####
 	plt.legend(ret, [key for key in sorted(experiments)], loc=(.75,2.8))
 
-        ####
-        # Plot the latency histograms (for now all on one chart which is weird).
-        ####
+		####
+		# Plot the latency histograms (for now all on one chart which is weird).
+		####
 
-        # Collect the data into the form that Matplotlib wants and identify the largest sample in
-        # all experiments.
-        times = []
-        max_latency = 0
-        for num,result in enumerate(sorted(experiments)):
-            times.append([time for (icmp_seq, ttl, time) in experiments[result]['responses']])
-            if experiments[result]['max'] > max_latency:
-                max_latency = experiments[result]['max']
+	# Collect the data into the form that Matplotlib wants and identify the largest sample in
+	# all experiments.
+	times = []
+	max_latency = 0
+	for num,result in enumerate(sorted(experiments)):
+		times.append([time for (icmp_seq, ttl, time) in experiments[result]['responses']])
+		if experiments[result]['max'] > max_latency:
+			max_latency = experiments[result]['max']
 
-        # How many bins should we have? Approximately HIST_BIN_SIZE_IN_MS sized bins.
-        bins = int(max_latency / HIST_BIN_SIZE_IN_MS)
+		# How many bins should we have? Approximately HIST_BIN_SIZE_IN_MS sized bins.
+		bins = int(max_latency / HIST_BIN_SIZE_IN_MS)
 
-        # Plot the histogram.
-        n, bins, patches = hist1_graph.hist(times, bins=bins, normed=True, range=(0,max_latency), color=colors.list(len(times)))
+		# Plot the histogram.
+		n, bins, patches = hist1_graph.hist(times, bins=bins, normed=True, range=(0,max_latency), color=colors.list(len(times)))
 
-        ####
-        # Plot the loss chart.
-        ####
+		####
+		# Plot the loss chart.
+		####
 	for num,result in enumerate(sorted(experiments)):
 		if len(experiments[result]['losses']) == 0:
-                        # No loss. Nothing to do.
+						# No loss. Nothing to do.
 			continue
 
 		points = [icmp_seq / (1 / results['ping_interval']) for icmp_seq in experiments[result]['losses']]
 
-                t = [num+1 for y in points] # Set the Y-value to the exeriment ID.
+		t = [num+1 for y in points] # Set the Y-value to the exeriment ID.
 
 		ret = loss_time_graph.scatter(points, t, c=colors[num], s=3, linewidths=0)
 
 	loss_time_graph.axis(xmin=0,ymin=0,xmax=x_max,ymax=num+2)
 
-        ####
+		####
 	# Write out the image if requested otherwise show it.
-        ####
+		####
 	if image_file:
 		canvas = FigureCanvas(fig)
-                canvas.print_png(image_file)
+		canvas.print_png(image_file)
 	else:
 		plt.show()
 
@@ -364,10 +363,10 @@ def experiment(ping_count, ping_interval, target_list):
 	# Wait for a result from each experiment and store them.
 	for num in range(len(experiments)):
 		tmp = results_q.get()
-		print "Got results for %(name)s" %{'name': tmp[0]}
+		print("Got results for %(name)s" %{'name': tmp[0]})
 		if tmp[1] == None:
 			# The ping command failed. Bail.
-			print "No results for %(name)s. Exiting." %{'name': tmp[0]}
+			print("No results for %(name)s. Exiting." %{'name': tmp[0]})
 			raise SystemExit()
 
 		# Store all of the results.
@@ -426,8 +425,8 @@ if __name__ == '__main__':
 	try:
 		opts,args = getopt.getopt(sys.argv[1:], 't:w:r:c:i:o:l')
 	except getopt.GetoptError:
-		print >> sys.stderr, usage(sys.argv[0])
-		print >> sys.stderr, "Error: Unknown argument."
+		print(usage(sys.argv[0]), file=sys.stderr)
+		print("Error: Unknown argument.", file=sys.stderr)
 		raise SystemExit()
 
 	for o,a in opts:
@@ -445,8 +444,8 @@ if __name__ == '__main__':
 			target_info = a.split(',')
 			# Each target has at least three options. The size is optional.
 			if len(target_info) != 3 and len(target_info) != 4:
-				print >> sys.stderr, usage(sys.argv[0])
-				print >> sys.stderr, "Error: Invalid target format."
+				print(usage(sys.argv[0]), file=sys.stderr)
+				print("Error: Invalid target format.", file=sys.stderr)
 				raise SystemExit()
 
 			# If size was not passed (it's optional) add the value ''. This causes the default
@@ -470,20 +469,20 @@ if __name__ == '__main__':
 
 	# It doesn't make sense to pass -r and -w at the same time.
 	if write_file and read_file:
-		print >> sys.stderr, usage(sys.argv[0])
-		print >> sys.stderr, "Error: -r and -w cannot be used together."
+		print(usage(sys.argv[0]), file=sys.stderr)
+		print("Error: -r and -w cannot be used together.", file=sys.stderr)
 		raise SystemExit()
 
 	# No sense in passing -t with -r either.
 	if read_file and (targets != []):
-		print >> sys.stderr, usage(sys.argv[0])
-		print >> sys.stderr, "Error: -t and -r cannot be used together."
+		print(usage(sys.argv[0]), file=sys.stderr)
+		print("Error: -t and -r cannot be used together.", file=sys.stderr)
 		raise SystemExit()
 
 	# But one of -r or -t must be used.
 	if not read_file and not (targets != []):
-		print >> sys.stderr, usage(sys.argv[0])
-		print >> sys.stderr, "Error: Must pass one of -t or -r."
+		print(usage(sys.argv[0]), file=sys.stderr)
+		print("Error: Must pass one of -t or -r.", file=sys.stderr)
 		raise SystemExit()
 
 	# Either get the results from a file or do the experiment.
@@ -507,3 +506,4 @@ if __name__ == '__main__':
 		f.close()
 	else:
 		graph(results, line_graph=line_graph)
+
