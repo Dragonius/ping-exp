@@ -96,7 +96,7 @@ def ping(host, qos=0, interval=1, count=5, size='', flood=False, debug_prefix=''
 		# vs print an error here.
 		m = response_truncated_re.search(line)
 		if m != None and truncated_responses == False:
-			print "Error: Truncated responses for %s. No response times recorded." %(host)
+			print ("Error: Truncated responses for %s. No response times recorded." %(host))
 			truncated_responses = True
 			continue
 
@@ -128,9 +128,9 @@ def ping(host, qos=0, interval=1, count=5, size='', flood=False, debug_prefix=''
 	ret = p.wait()
 	if ret >= 2:
 		# Ping failed. Dump the output ping sent to stderr.
-		print "Ping failed. Ping standard error output follows this message."
+		print ("Ping failed. Ping standard error output follows this message.")
 		for line in p.stderr.readlines():
-			print line
+			print (line)
 
 		return None # No results.
 	elif ret == 1:
@@ -173,34 +173,35 @@ def do_ping(results_q, experiment_id, host, qos=0, interval=1, count=5, size='',
         # This is a good place to calculate statistics since this is in a separate process.
 
         # Sort the results by the ICMP sequence # in case some responses came back out of order.
-        def get_ttl(response):
-            return response[0]
-        results['responses'] = sorted(results['responses'], key=get_ttl)
+def get_ttl(response):
+    return response[0]
+    results['responses'] = sorted(results['responses'], key=get_ttl)
 
-        # Get a list of all the sequence numbers of packets which were dropped.
-        results['losses'] = find_lost_sequence_numbers(results)
+    # Get a list of all the sequence numbers of packets which were dropped.
+    results['losses'] = find_lost_sequence_numbers(results)
 
-        # Calculate the min and max response times.
-        min = results['responses'][0][2]
-        max = results['responses'][0][2]
-        for response in results['responses']:
-            if response[2] < min:
-                min = response[2]
-            if response[2] > max:
-                max = response[2]
+    # Calculate the min and max response times.
+    min = results['responses'][0][2]
+    max = results['responses'][0][2]
+    for response in results['responses']:
+        if response[2] < min:
+            min = response[2]
+        if response[2] > max:
+            max = response[2]
 
-        results['min'] = min
-        results['max'] = max
+    results['min'] = min
+    results['max'] = max
 
-        # Put the results onto the results Queue to be collected by the main process.
-	results_q.put((experiment_id, results))
+    # Put the results onto the results Queue to be collected by the main process.
+results_q.put((experiment_id, results))
 
 
 def graph(results, line_graph=False, image_file=None):
 	"""Function to graph the results of a ping experiment."""
 	TITLE_FONT = {'family': 'sans-serif', 'weight': 'bold', 'size': 14}
 	colors = Colors()
-        HIST_BIN_SIZE_IN_MS = 2 # Size of the histogram bins in ms.
+    # Size of the histrogram in ms
+    HIST_BIN_SIZE_IN_MS=2
 
 	# Create the figure.
 	fig = plt.figure(figsize=(10,10), facecolor='w')
@@ -233,8 +234,8 @@ def graph(results, line_graph=False, image_file=None):
 	mdev_graph.set_ylabel('Mean deviation (ms)')
 	mdev_graph.set_xticks([]) # Disables x ticks.
 
-        # Create the latency histogram.
-        hist1_graph = fig.add_subplot(4,1,3)
+    # Create the latency histogram.
+    hist1_graph = fig.add_subplot(4,1,3)
 	hist1_graph.set_title('Latency histogram (%i ms bins)' %(HIST_BIN_SIZE_IN_MS), TITLE_FONT)
 	hist1_graph.set_xlabel('Latency')
 	hist1_graph.set_ylabel('Samples')
